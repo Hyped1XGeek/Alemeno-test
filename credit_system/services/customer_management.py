@@ -6,7 +6,6 @@ This module handles customer registration and data management operations.
 
 import logging
 from decimal import Decimal
-from typing import Dict, Optional
 
 from django.db import transaction
 
@@ -26,7 +25,7 @@ class CustomerManagementService:
         monthly_income: Decimal,
         phone_number: str,
         approved_limit: Decimal
-    ) -> Dict:
+    ) -> dict:
         """
         Register a new customer.
         
@@ -54,11 +53,11 @@ class CustomerManagementService:
                     'approved_limit': float(approved_limit),
                     'message': 'Phone number already exists'
                 }
-            
+
             # Generate customer ID (simple auto-increment for now)
             last_customer = Customer.objects.order_by('-customer_id').first()
             customer_id = (last_customer.customer_id + 1) if last_customer else 1
-            
+
             with transaction.atomic():
                 customer = Customer.objects.create(
                     customer_id=customer_id,
@@ -69,9 +68,9 @@ class CustomerManagementService:
                     phone_number=phone_number,
                     approved_limit=approved_limit,
                 )
-                
+
                 logger.info(f"Customer {customer_id} registered successfully")
-                
+
                 return {
                     'customer_id': customer.customer_id,
                     'first_name': customer.first_name,
@@ -82,7 +81,7 @@ class CustomerManagementService:
                     'approved_limit': float(customer.approved_limit),
                     'message': 'Customer registered successfully'
                 }
-                
+
         except Exception as e:
             logger.error(f"Error registering customer: {e}")
             return {
@@ -97,7 +96,7 @@ class CustomerManagementService:
             }
 
     @staticmethod
-    def get_customer_details(customer_id: int) -> Optional[Dict]:
+    def get_customer_details(customer_id: int) -> dict | None:
         """
         Get detailed information about a specific customer.
         

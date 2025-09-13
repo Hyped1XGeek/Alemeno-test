@@ -7,17 +7,16 @@ This module contains API views that match the assignment requirements exactly.
 import logging
 from decimal import Decimal
 
-from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import Customer, Loan
+from .models import Customer
 from .services import (
     CreditScoringService,
+    CustomerManagementService,
     LoanManagementService,
-    CustomerManagementService
 )
 
 logger = logging.getLogger(__name__)
@@ -40,7 +39,7 @@ def register(request):
                     {"error": f"Missing required field: {field}"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
+
         # Validate data types
         try:
             age = int(request.data["age"])
@@ -50,17 +49,17 @@ def register(request):
                 {"error": "Invalid data types for age or monthly_income"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Check if phone number already exists
         if Customer.objects.filter(phone_number=request.data["phone_number"]).exists():
             return Response(
                 {"error": "Phone number already exists"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Calculate approved limit based on monthly income
         approved_limit = Customer.calculate_approved_limit(monthly_income)
-        
+
         # Register customer
         result = CustomerManagementService.register_customer(
             first_name=request.data["first_name"],
@@ -70,9 +69,9 @@ def register(request):
             phone_number=request.data["phone_number"],
             approved_limit=approved_limit
         )
-        
+
         return Response(result, status=status.HTTP_201_CREATED)
-        
+
     except Exception as e:
         logger.error(f"Error in register: {str(e)}")
         return Response(
@@ -98,7 +97,7 @@ def check_eligibility(request):
                     {"error": f"Missing required field: {field}"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
+
         # Validate data types
         try:
             customer_id = int(request.data["customer_id"])
@@ -110,7 +109,7 @@ def check_eligibility(request):
                 {"error": "Invalid data types"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Get customer and check eligibility
         try:
             customer = Customer.objects.get(customer_id=customer_id)
@@ -119,17 +118,17 @@ def check_eligibility(request):
                 {"error": "Customer not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
         # Check loan approval
         approved, message, corrected_interest_rate = CreditScoringService.check_loan_approval(
             customer, loan_amount, interest_rate, tenure
         )
-        
+
         # Calculate monthly installment
         monthly_installment = CreditScoringService.calculate_monthly_emi(
             loan_amount, corrected_interest_rate, tenure
         )
-        
+
         result = {
             'customer_id': customer_id,
             'approval': approved,
@@ -138,12 +137,12 @@ def check_eligibility(request):
             'tenure': tenure,
             'monthly_installment': float(monthly_installment)
         }
-        
+
         if "error" in result:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
-        
+
         return Response(result, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         logger.error(f"Error in check_eligibility: {str(e)}")
         return Response(
@@ -169,7 +168,7 @@ def create_loan(request):
                     {"error": f"Missing required field: {field}"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
+
         # Validate data types
         try:
             customer_id = int(request.data["customer_id"])
@@ -181,7 +180,7 @@ def create_loan(request):
                 {"error": "Invalid data types"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Create loan
         result = LoanManagementService.create_loan(
             customer_id=customer_id,
@@ -189,15 +188,15 @@ def create_loan(request):
             interest_rate=interest_rate,
             tenure=tenure,
         )
-        
+
         if "error" in result:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
-        
+
         # Return appropriate status code based on approval
         status_code = status.HTTP_201_CREATED if result["loan_approved"] else status.HTTP_400_BAD_REQUEST
-        
+
         return Response(result, status=status_code)
-        
+
     except Exception as e:
         logger.error(f"Error in create_loan: {str(e)}")
         return Response(
@@ -221,15 +220,15 @@ def view_loan(request, loan_id):
             {"error": "Invalid loan ID"},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     try:
         result = LoanManagementService.get_loan_details(loan_id)
-        
+
         if "error" in result:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
-        
+
         return Response(result, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         logger.error(f"Error in view_loan: {str(e)}")
         return Response(
@@ -253,15 +252,15 @@ def view_customer_loans(request, customer_id):
             {"error": "Invalid customer ID"},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     try:
         result = LoanManagementService.get_customer_loans(customer_id)
-        
+
         if "error" in result:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
-        
+
         return Response(result, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         logger.error(f"Error in view_customer_loans: {str(e)}")
         return Response(
@@ -282,7 +281,7 @@ def system_stats(request):
     try:
         result = LoanManagementService.get_system_stats()
         return Response(result)
-        
+
     except Exception as e:
         logger.error(f"Error in system_stats: {str(e)}")
         return Response(
@@ -312,10 +311,10 @@ def get_credit_score(request, customer_id):
                 {"error": "Customer not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        
+
         # Calculate credit score
         credit_score = CreditScoringService.calculate_credit_score(customer)
-        
+
         # Prepare response
         result = {
             "customer_id": customer.customer_id,
@@ -327,9 +326,9 @@ def get_credit_score(request, customer_id):
             "credit_score": credit_score,
             "credit_utilization": float(customer.credit_utilization_ratio)
         }
-        
+
         return Response(result)
-        
+
     except Exception as e:
         logger.error(f"Error in get_credit_score: {str(e)}")
         return Response(

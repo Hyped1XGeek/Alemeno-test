@@ -5,13 +5,10 @@ This module handles credit score calculation and loan approval decisions.
 """
 
 import logging
-from decimal import Decimal
-from typing import Dict, Tuple
 from datetime import date
+from decimal import Decimal
 
-from django.db import transaction
-
-from ..models import Customer, Loan
+from ..models import Customer
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +39,13 @@ class CreditScoringService:
         # current_debt is calculated from active loans
         if customer.current_debt > customer.approved_limit:
             return 0
-        
+
         score = 0
         customer_loans = customer.loans.all()
-        
+
         if not customer_loans.exists():
             return 50  # Default score for new customers
-        
+
         # Component 1: Past Loans paid on time (30 points)
         past_loans = customer_loans.filter(end_date__lt=date.today())
         total_past_loans = past_loans.count()
@@ -61,7 +58,7 @@ class CreditScoringService:
             on_time_ratio = paid_on_time / total_past_loans
             component1_score = int(30 * on_time_ratio)
             score += component1_score
-        
+
         # Component 2: Number of loans taken in past (25 points)
         total_loans = customer_loans.count()
         if total_loans >= 5:
@@ -73,7 +70,7 @@ class CreditScoringService:
         else:
             component2_score = 0
         score += component2_score
-        
+
         # Component 3: Loan activity in current year (25 points)
         current_year = date.today().year
         current_year_loans = customer_loans.filter(start_date__year=current_year).count()
@@ -84,7 +81,7 @@ class CreditScoringService:
         else:
             component3_score = 0
         score += component3_score
-        
+
         # Component 4: Loan approved volume (20 points)
         total_approved_volume = sum(loan.loan_amount for loan in customer_loans)
         if total_approved_volume >= 1000000:  # 10 lakhs
@@ -98,16 +95,16 @@ class CreditScoringService:
         else:
             component4_score = 0
         score += component4_score
-        
+
         return min(score, 100)  # Cap at 100
 
     @staticmethod
     def check_loan_approval(
-        customer: Customer, 
-        loan_amount: Decimal, 
-        interest_rate: Decimal, 
+        customer: Customer,
+        loan_amount: Decimal,
+        interest_rate: Decimal,
         tenure: int
-    ) -> Tuple[bool, str, Decimal]:
+    ) -> tuple[bool, str, Decimal]:
         """
         Check if a loan should be approved based on credit score and other criteria.
         
@@ -129,18 +126,18 @@ class CreditScoringService:
         """
         # Calculate credit score
         credit_score = CreditScoringService.calculate_credit_score(customer)
-        
+
         # Determine corrected interest rate based on credit score first
         corrected_interest_rate = CreditScoringService.get_corrected_interest_rate(interest_rate, credit_score)
-        
+
         # Check if sum of all current EMIs > 50% of monthly salary
         current_monthly_emis = sum(loan.monthly_installment for loan in customer.loans.filter(end_date__gte=date.today()))
         new_loan_emi = CreditScoringService.calculate_monthly_emi(loan_amount, corrected_interest_rate, tenure)
         total_monthly_emis = current_monthly_emis + new_loan_emi
-        
+
         if total_monthly_emis > (customer.monthly_income * Decimal('0.5')):
             return False, "Sum of all current EMIs exceeds 50% of monthly salary", corrected_interest_rate
-        
+
         # Check approval based on credit score and interest rate
         if credit_score > 50:
             return True, "Loan approved", corrected_interest_rate
@@ -159,8 +156,8 @@ class CreditScoringService:
 
     @staticmethod
     def calculate_monthly_emi(
-        loan_amount: Decimal, 
-        interest_rate: Decimal, 
+        loan_amount: Decimal,
+        interest_rate: Decimal,
         tenure: int
     ) -> Decimal:
         """
@@ -182,17 +179,17 @@ class CreditScoringService:
         """
         if tenure == 0:
             return Decimal('0')
-        
+
         # Convert annual rate to monthly rate
         monthly_rate = interest_rate / Decimal('12') / Decimal('100')
-        
+
         # Calculate EMI using compound interest formula
         if monthly_rate == 0:
             return loan_amount / tenure
-        
+
         emi = loan_amount * monthly_rate * ((1 + monthly_rate) ** tenure) / \
               (((1 + monthly_rate) ** tenure) - 1)
-        
+
         return emi.quantize(Decimal('0.01'))
 
     @staticmethod

@@ -5,9 +5,9 @@ This module contains the Customer and Loan models that represent the core entiti
 """
 
 from decimal import Decimal
-from django.core.validators import MinValueValidator, MaxValueValidator
+
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.utils import timezone
 
 
 class Customer(models.Model):
@@ -25,7 +25,7 @@ class Customer(models.Model):
         created_at: Timestamp when the customer was created
         updated_at: Timestamp when the customer was last updated
     """
-    
+
     customer_id = models.PositiveIntegerField(unique=True, primary_key=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -44,7 +44,7 @@ class Customer(models.Model):
 
     class Meta:
         """Meta options for the Customer model."""
-        
+
         db_table = "customers"
         ordering = ["customer_id"]
 
@@ -100,7 +100,7 @@ class Loan(models.Model):
         created_at: Timestamp when the loan was created
         updated_at: Timestamp when the loan was last updated
     """
-    
+
     loan_id = models.PositiveIntegerField(unique=True, primary_key=True)
     customer = models.ForeignKey(
         Customer, on_delete=models.CASCADE, related_name="loans"
@@ -125,7 +125,7 @@ class Loan(models.Model):
 
     class Meta:
         """Meta options for the Loan model."""
-        
+
         db_table = "loans"
         ordering = ["-start_date"]
 
@@ -149,7 +149,7 @@ class Loan(models.Model):
         """Calculate the remaining loan amount."""
         if not self.is_active:
             return Decimal('0')
-        
+
         total_emis = self.tenure
         remaining_emis = total_emis - self.emis_paid_on_time
         return remaining_emis * self.monthly_installment

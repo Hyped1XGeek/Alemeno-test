@@ -6,11 +6,9 @@ This is the main entry point for the Credit Approval System.
 It provides options to start the server, run tests, or setup the system.
 """
 
-import os
-import sys
-import subprocess
 import argparse
-from pathlib import Path
+import subprocess
+import sys
 
 # Initialize logging
 try:
@@ -35,7 +33,7 @@ def print_banner():
 def check_requirements():
     """Check if required tools are available."""
     print("🔍 Checking requirements...")
-    
+
     # Check if uv is available
     try:
         subprocess.run(["uv", "--version"], capture_output=True, check=True)
@@ -43,34 +41,34 @@ def check_requirements():
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("❌ uv package manager not found. Please install uv first.")
         return False
-    
+
     # Check if Docker is available
     try:
         subprocess.run(["docker", "--version"], capture_output=True, check=True)
         print("✅ Docker is available")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("⚠️  Docker not found. PostgreSQL will use local installation.")
-    
+
     return True
 
 
 def setup_system():
     """Setup the system (database, migrations, data import)."""
     print("\n🏗️  Setting up Credit Approval System...")
-    
+
     try:
         # Run the setup script
         result = subprocess.run([
             "uv", "run", "python", "bin/setup_postgres_docker.py"
         ], check=True)
-        
+
         if result.returncode == 0:
             print("✅ System setup completed successfully!")
             return True
         else:
             print("❌ System setup failed!")
             return False
-            
+
     except subprocess.CalledProcessError as e:
         print(f"❌ Setup failed: {e}")
         return False
@@ -84,7 +82,7 @@ def start_server():
     print("📋 API endpoints: http://127.0.0.1:8000/api/")
     print("\n⏹️  Press Ctrl+C to stop the server")
     print("-" * 60)
-    
+
     try:
         subprocess.run([
             "uv", "run", "python", "manage.py", "runserver"
@@ -98,17 +96,17 @@ def start_server():
 def run_tests():
     """Run the comprehensive tests."""
     print("\n🧪 Running Credit Approval System tests...")
-    
+
     try:
         result = subprocess.run([
             "uv", "run", "python", "bin/run_tests.py", "--all"
         ], check=True)
-        
+
         if result.returncode == 0:
             print("✅ All tests passed!")
         else:
             print("❌ Some tests failed!")
-            
+
     except subprocess.CalledProcessError as e:
         print(f"❌ Test execution failed: {e}")
 
@@ -116,17 +114,17 @@ def run_tests():
 def run_unit_tests():
     """Run unit tests only."""
     print("\n🧪 Running unit tests...")
-    
+
     try:
         result = subprocess.run([
             "uv", "run", "python", "bin/run_tests.py", "--unit"
         ], check=True)
-        
+
         if result.returncode == 0:
             print("✅ All unit tests passed!")
         else:
             print("❌ Some unit tests failed!")
-            
+
     except subprocess.CalledProcessError as e:
         print(f"❌ Unit test execution failed: {e}")
 
@@ -134,17 +132,17 @@ def run_unit_tests():
 def run_api_tests():
     """Run API tests only."""
     print("\n🌐 Running API tests...")
-    
+
     try:
         result = subprocess.run([
             "uv", "run", "python", "bin/run_tests.py", "--api"
         ], check=True)
-        
+
         if result.returncode == 0:
             print("✅ All API tests passed!")
         else:
             print("❌ Some API tests failed!")
-            
+
     except subprocess.CalledProcessError as e:
         print(f"❌ API test execution failed: {e}")
 
@@ -178,7 +176,7 @@ def show_help():
 def main():
     """Main application entry point."""
     print_banner()
-    
+
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         description="Credit Approval System - Main Launcher",
@@ -191,13 +189,13 @@ def main():
         choices=["start", "setup", "test", "unit", "api", "help"],
         help="Command to execute (default: start)"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Check requirements
     if not check_requirements():
         sys.exit(1)
-    
+
     # Execute the requested command
     if args.command == "start":
         start_server()

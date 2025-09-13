@@ -6,8 +6,8 @@ This script sets up the database, imports data, and starts the Django server.
 """
 
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 # Add the project root to Python path
@@ -20,11 +20,11 @@ def run_command(command, description):
     print(f"🔄 {description}...")
     try:
         result = subprocess.run(
-            command, 
-            shell=True, 
-            cwd=project_root, 
-            check=True, 
-            capture_output=True, 
+            command,
+            shell=True,
+            cwd=project_root,
+            check=True,
+            capture_output=True,
             text=True
         )
         print(f"✅ {description} completed successfully")
@@ -38,11 +38,11 @@ def run_command(command, description):
 def check_dependencies():
     """Check if required dependencies are installed."""
     print("🔍 Checking dependencies...")
-    
+
     try:
         import django
-        import rest_framework
         import pandas
+        import rest_framework
         print("✅ All dependencies are installed")
         return True
     except ImportError as e:
@@ -57,7 +57,7 @@ def setup_database():
         ("uv run python manage.py makemigrations", "Creating migrations"),
         ("uv run python manage.py migrate", "Applying migrations"),
     ]
-    
+
     for command, description in commands:
         if not run_command(command, description):
             return False
@@ -67,7 +67,7 @@ def setup_database():
 def import_data():
     """Import sample data."""
     return run_command(
-        "uv run python manage.py import_data", 
+        "uv run python manage.py import_data",
         "Importing customer and loan data"
     )
 
@@ -75,13 +75,13 @@ def import_data():
 def create_superuser():
     """Create a superuser if it doesn't exist."""
     print("🔍 Checking for superuser...")
-    
+
     try:
         # Try to import Django and check for superuser
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")
         import django
         django.setup()
-        
+
         from django.contrib.auth.models import User
         if User.objects.filter(is_superuser=True).exists():
             print("✅ Superuser already exists")
@@ -90,7 +90,7 @@ def create_superuser():
             print("👤 Creating superuser...")
             print("Please enter superuser details:")
             return run_command(
-                "uv run python manage.py createsuperuser", 
+                "uv run python manage.py createsuperuser",
                 "Creating superuser"
             )
     except Exception as e:
@@ -106,12 +106,12 @@ def start_server():
     print("Admin interface: http://localhost:8000/admin/")
     print("Press Ctrl+C to stop the server")
     print("-" * 50)
-    
+
     try:
         subprocess.run(
-            "uv run python manage.py runserver", 
-            shell=True, 
-            cwd=project_root, 
+            "uv run python manage.py runserver",
+            shell=True,
+            cwd=project_root,
             check=True
         )
     except KeyboardInterrupt:
@@ -125,24 +125,24 @@ def main():
     print("=" * 60)
     print("🏦 Credit Approval System - Startup Script")
     print("=" * 60)
-    
+
     # Check dependencies
     if not check_dependencies():
         sys.exit(1)
-    
+
     # Setup database
     if not setup_database():
         print("❌ Database setup failed")
         sys.exit(1)
-    
+
     # Import data
     if not import_data():
         print("⚠️ Data import failed, but continuing...")
-    
+
     # Create superuser
     if not create_superuser():
         print("⚠️ Superuser creation failed, but continuing...")
-    
+
     # Start server
     start_server()
 

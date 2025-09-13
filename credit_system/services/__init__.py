@@ -8,11 +8,11 @@ This package contains the business logic services split into different modules:
 """
 
 from .credit_scoring import CreditScoringService
-from .loan_management import LoanManagementService
 from .customer_management import CustomerManagementService
+from .loan_management import LoanManagementService
 
 __all__ = [
     'CreditScoringService',
-    'LoanManagementService', 
+    'LoanManagementService',
     'CustomerManagementService'
 ]

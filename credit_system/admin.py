@@ -5,13 +5,14 @@ This module configures the Django admin interface for managing customers and loa
 """
 
 from django.contrib import admin
+
 from .models import Customer, Loan
 
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
     """Admin configuration for Customer model."""
-    
+
     list_display = [
         "customer_id",
         "first_name",
@@ -31,7 +32,7 @@ class CustomerAdmin(admin.ModelAdmin):
 @admin.register(Loan)
 class LoanAdmin(admin.ModelAdmin):
     """Admin configuration for Loan model."""
-    
+
     list_display = [
         "loan_id",
         "customer",

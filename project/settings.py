@@ -80,12 +80,26 @@ if os.getenv('DATABASE_URL'):
     }
 else:
     # PostgreSQL configuration for Docker setup
+    def get_db_password():
+        """Get database password from environment variable or Docker secret file."""
+        # Try to read from Docker secret file first
+        secret_file = os.getenv("DB_PASSWORD_FILE")
+        if secret_file and os.path.exists(secret_file):
+            try:
+                with open(secret_file) as f:
+                    return f.read().strip()
+            except Exception:
+                pass
+
+        # Fallback to environment variable
+        return os.getenv("DB_PASSWORD", "alemeno_2025_Anand")
+
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME", "credit_system"),
-            "USER": os.getenv("DB_USER", "postgres"),
-            "PASSWORD": os.getenv("DB_PASSWORD", "Anand123*"),  # Your Docker PostgreSQL password
+            "NAME": os.getenv("DB_NAME", "alemeno_credit_system"),
+            "USER": os.getenv("DB_USER", "alemeno_user"),
+            "PASSWORD": get_db_password(),
             "HOST": os.getenv("DB_HOST", "localhost"),
             "PORT": os.getenv("DB_PORT", "5432"),
             "OPTIONS": {
@@ -93,7 +107,7 @@ else:
             }
         }
     }
-    
+
     # Fallback to SQLite if PostgreSQL is not available
     try:
         import psycopg2

@@ -1,0 +1,92 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation (keep README.md for pyproject.toml)
+DOCKER_SETUP.md
+PROJECT_STRUCTURE_GUIDE.md
+TESTING_GUIDE.md
+Docs/
+
+# Archives
+archive/
+temp_test/
+
+# Logs (will be mounted as volume)
+logs/
+
+# Secrets (will be mounted as volume)
+secrets/
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Temporary files
+*.tmp
+*.temp

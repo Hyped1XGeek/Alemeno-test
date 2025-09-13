@@ -5,9 +5,8 @@ This module contains the core business logic for credit approval, credit scoring
 """
 
 import logging
+from datetime import date
 from decimal import Decimal
-from typing import Dict, List, Tuple
-from datetime import date, datetime
 
 from django.db import transaction
 from django.utils import timezone
@@ -42,21 +41,21 @@ class CreditScoringService:
         # Check if current debt exceeds approved limit
         if customer.current_debt > customer.approved_limit:
             return 0
-        
+
         score = 0
         customer_loans = customer.loans.all()
-        
+
         if not customer_loans.exists():
             return 50  # Default score for new customers
-        
+
         # i. Past Loans paid on time (40 points max)
         total_emis = sum(loan.tenure for loan in customer_loans)
         total_paid_on_time = sum(loan.emis_paid_on_time for loan in customer_loans)
-        
+
         if total_emis > 0:
             on_time_ratio = total_paid_on_time / total_emis
             score += int(on_time_ratio * 40)
-        
+
         # ii. No of loans taken in past (20 points max)
         loan_count = customer_loans.count()
         if loan_count >= 5:
@@ -65,13 +64,13 @@ class CreditScoringService:
             score += 15
         elif loan_count >= 1:
             score += 10
-        
+
         # iii. Loan activity in current year (20 points max)
         current_year = date.today().year
         current_year_loans = customer_loans.filter(start_date__year=current_year)
         if current_year_loans.exists():
             score += 20
-        
+
         # iv. Loan approved volume (20 points max)
         total_loan_volume = sum(loan.loan_amount for loan in customer_loans)
         if total_loan_volume >= 1000000:  # 10 lakhs
@@ -80,7 +79,7 @@ class CreditScoringService:
             score += 15
         elif total_loan_volume >= 100000:  # 1 lakh
             score += 10
-        
+
         return min(100, max(0, score))
 
     @staticmethod
@@ -106,7 +105,7 @@ class CreditScoringService:
     @staticmethod
     def should_approve_loan(
         customer: Customer, loan_amount: Decimal, tenure: int, interest_rate: Decimal
-    ) -> Tuple[bool, List[str], float]:
+    ) -> tuple[bool, list[str], float]:
         """
         Determine if a loan should be approved for a customer.
         
@@ -121,39 +120,39 @@ class CreditScoringService:
         """
         reasons = []
         approved = True
-        
+
         # Check if customer exists
         if not customer:
             return False, ["Customer not found"], interest_rate
-        
+
         # Calculate credit score
         credit_score = CreditScoringService.calculate_credit_score(customer)
-        
+
         # Check if sum of current EMIs > 50% of monthly salary
         current_emis = sum(loan.monthly_installment for loan in customer.loans.filter(end_date__gt=date.today()))
         new_emi = LoanCalculationService.calculate_monthly_installment(loan_amount, tenure, interest_rate)
         total_emis = current_emis + new_emi
-        
+
         if total_emis > customer.monthly_income * Decimal('0.5'):
             approved = False
             reasons.append("Sum of all current EMIs > 50% of monthly salary")
-        
+
         # Check credit score and interest rate requirements
         min_interest_rate = CreditScoringService.get_interest_rate_slab(credit_score)
-        
+
         if credit_score <= 10:
             approved = False
             reasons.append("Credit score too low (<= 10)")
         elif interest_rate < min_interest_rate:
             approved = False
             reasons.append(f"Interest rate too low. Minimum required: {min_interest_rate}%")
-        
+
         # Calculate corrected interest rate
         corrected_interest_rate = max(interest_rate, min_interest_rate)
-        
+
         if approved:
             reasons.append("Loan approved based on all criteria")
-        
+
         return approved, reasons, float(corrected_interest_rate)
 
 
@@ -177,17 +176,17 @@ class LoanCalculationService:
         """
         if tenure_months == 0:
             return Decimal('0')
-        
+
         monthly_rate = annual_rate / 100 / 12
-        
+
         if monthly_rate == 0:
             return principal / tenure_months
-        
+
         # Compound interest formula for EMI
         monthly_installment = principal * (
             monthly_rate * (1 + monthly_rate) ** tenure_months
         ) / ((1 + monthly_rate) ** tenure_months - 1)
-        
+
         return monthly_installment.quantize(Decimal('0.01'))
 
 
@@ -201,7 +200,7 @@ class CreditApprovalService:
         age: int,
         monthly_income: Decimal,
         phone_number: str,
-    ) -> Dict:
+    ) -> dict:
         """
         Register a new customer with calculated approved limit.
         
@@ -217,11 +216,11 @@ class CreditApprovalService:
         """
         # Calculate approved limit: 36 * monthly_salary (rounded to nearest lakh)
         approved_limit = Customer.calculate_approved_limit(monthly_income)
-        
+
         # Get next customer ID
         last_customer = Customer.objects.order_by('-customer_id').first()
         customer_id = (last_customer.customer_id + 1) if last_customer else 1
-        
+
         customer = Customer.objects.create(
             customer_id=customer_id,
             first_name=first_name,
@@ -231,7 +230,7 @@ class CreditApprovalService:
             phone_number=phone_number,
             approved_limit=approved_limit,
         )
-        
+
         return {
             "customer_id": customer.customer_id,
             "name": customer.full_name,
@@ -247,7 +246,7 @@ class CreditApprovalService:
         loan_amount: Decimal,
         interest_rate: Decimal,
         tenure: int,
-    ) -> Dict:
+    ) -> dict:
         """
         Check loan eligibility for a customer.
         
@@ -264,17 +263,17 @@ class CreditApprovalService:
             customer = Customer.objects.get(customer_id=customer_id)
         except Customer.DoesNotExist:
             return {"error": "Customer not found"}
-        
+
         # Calculate monthly installment
         monthly_installment = LoanCalculationService.calculate_monthly_installment(
             loan_amount, tenure, interest_rate
         )
-        
+
         # Check approval
         approved, reasons, corrected_interest_rate = CreditScoringService.should_approve_loan(
             customer, loan_amount, tenure, interest_rate
         )
-        
+
         return {
             "customer_id": customer_id,
             "approval": approved,
@@ -291,7 +290,7 @@ class CreditApprovalService:
         loan_amount: Decimal,
         interest_rate: Decimal,
         tenure: int,
-    ) -> Dict:
+    ) -> dict:
         """
         Create a new loan for a customer.
         
@@ -308,22 +307,22 @@ class CreditApprovalService:
             customer = Customer.objects.get(customer_id=customer_id)
         except Customer.DoesNotExist:
             return {"error": "Customer not found"}
-        
+
         # Calculate monthly installment
         monthly_installment = LoanCalculationService.calculate_monthly_installment(
             loan_amount, tenure, interest_rate
         )
-        
+
         # Check approval
         approved, reasons, corrected_interest_rate = CreditScoringService.should_approve_loan(
             customer, loan_amount, tenure, interest_rate
         )
-        
+
         if approved:
             # Get next loan ID
             last_loan = Loan.objects.order_by('-loan_id').first()
             loan_id = (last_loan.loan_id + 1) if last_loan else 1
-            
+
             # Create loan
             loan = Loan.objects.create(
                 loan_id=loan_id,
@@ -335,7 +334,7 @@ class CreditApprovalService:
                 start_date=date.today(),
                 end_date=date.today() + timezone.timedelta(days=tenure * 30),
             )
-            
+
             return {
                 "loan_id": loan.loan_id,
                 "customer_id": customer_id,
@@ -353,7 +352,7 @@ class CreditApprovalService:
             }
 
     @staticmethod
-    def view_loan(loan_id: int) -> Dict:
+    def view_loan(loan_id: int) -> dict:
         """
         View loan details and customer details.
         
@@ -367,7 +366,7 @@ class CreditApprovalService:
             loan = Loan.objects.get(loan_id=loan_id)
         except Loan.DoesNotExist:
             return {"error": "Loan not found"}
-        
+
         return {
             "loan_id": loan.loan_id,
             "customer": {
@@ -384,7 +383,7 @@ class CreditApprovalService:
         }
 
     @staticmethod
-    def view_customer_loans(customer_id: int) -> Dict:
+    def view_customer_loans(customer_id: int) -> dict:
         """
         View all current loan details by customer ID.
         
@@ -398,9 +397,9 @@ class CreditApprovalService:
             customer = Customer.objects.get(customer_id=customer_id)
         except Customer.DoesNotExist:
             return {"error": "Customer not found"}
-        
+
         active_loans = customer.loans.filter(end_date__gt=date.today())
-        
+
         loans = []
         for loan in active_loans:
             loans.append({
@@ -410,7 +409,7 @@ class CreditApprovalService:
                 "monthly_installment": float(loan.monthly_installment),
                 "repayments_left": loan.repayments_left,
             })
-        
+
         return {
             "customer_id": customer.customer_id,
             "first_name": customer.first_name,

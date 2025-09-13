@@ -4,7 +4,6 @@ Logging configuration for Credit Approval System.
 This module sets up comprehensive logging with datetime stamps and proper log files.
 """
 
-import os
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -19,14 +18,14 @@ def setup_logging():
     # Create logs directory if it doesn't exist
     logs_dir = Path("logs")
     logs_dir.mkdir(exist_ok=True)
-    
+
     # Generate timestamp for log file naming
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
+
     # Configure logging format
     log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
-    
+
     # Configure root logger
     logging.basicConfig(
         level=logging.INFO,
@@ -43,19 +42,19 @@ def setup_logging():
             logging.StreamHandler()
         ]
     )
-    
+
     # Configure Django logger
     django_logger = logging.getLogger('django')
     django_logger.setLevel(logging.INFO)
-    
+
     # Configure credit system logger
     credit_logger = logging.getLogger('credit_system')
     credit_logger.setLevel(logging.DEBUG)
-    
+
     # Configure database logger
     db_logger = logging.getLogger('django.db.backends')
     db_logger.setLevel(logging.WARNING)  # Only show warnings and errors
-    
+
     # Log application startup
     startup_logger = logging.getLogger('credit_system.startup')
     startup_logger.info("=" * 60)
@@ -64,7 +63,7 @@ def setup_logging():
     startup_logger.info(f"Application started at: {datetime.now()}")
     startup_logger.info(f"Log file: {logs_dir / f'credit_system_{timestamp}.log'}")
     startup_logger.info("=" * 60)
-    
+
     return startup_logger
 
 

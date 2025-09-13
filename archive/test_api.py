@@ -3,16 +3,17 @@
 API test script for the Credit Approval System.
 """
 
+
 import requests
-import json
+
 
 def test_api():
     """Test the API endpoints."""
     base_url = "http://localhost:8000/api"
-    
+
     print("Testing Credit Approval System API...")
     print("=" * 50)
-    
+
     # Test system stats
     print("1. Testing system stats...")
     try:
@@ -24,7 +25,7 @@ def test_api():
             print(f"❌ Stats failed: {response.status_code}")
     except Exception as e:
         print(f"❌ Stats error: {e}")
-    
+
     # Test customer list
     print("\n2. Testing customer list...")
     try:
@@ -38,7 +39,7 @@ def test_api():
             print(f"❌ Customer list failed: {response.status_code}")
     except Exception as e:
         print(f"❌ Customer list error: {e}")
-    
+
     # Test credit approval
     print("\n3. Testing credit approval...")
     try:
@@ -61,7 +62,7 @@ def test_api():
             print(f"Response: {response.text}")
     except Exception as e:
         print(f"❌ Credit approval error: {e}")
-    
+
     # Test customer detail
     print("\n4. Testing customer detail...")
     try:
@@ -75,7 +76,7 @@ def test_api():
             print(f"❌ Customer detail failed: {response.status_code}")
     except Exception as e:
         print(f"❌ Customer detail error: {e}")
-    
+
     print("\n" + "=" * 50)
     print("API testing completed!")
 

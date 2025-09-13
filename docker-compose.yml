@@ -1,42 +1,78 @@
-version: '3.8'
-
 services:
+  # PostgreSQL Database
   db:
-    image: postgres:15
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
+    image: postgres:15-alpine
+    container_name: alemeno_postgres
     environment:
-      POSTGRES_DB: credit_system
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: alemeno_credit_system
+      POSTGRES_USER: alemeno_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./secrets/db_password.txt:/run/secrets/db_password:ro
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U alemeno_user -d alemeno_credit_system"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - alemeno_network
 
+  # Django Application
   web:
     build: .
-    command: >
-      sh -c "uv run python manage.py migrate &&
-             uv run python manage.py import_data &&
-             uv run python manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
+    container_name: alemeno_web
     environment:
       - DEBUG=1
-      - DB_NAME=credit_system
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
       - DB_HOST=db
       - DB_PORT=5432
+      - DB_NAME=alemeno_credit_system
+      - DB_USER=alemeno_user
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+    volumes:
+      - ./secrets/db_password.txt:/run/secrets/db_password:ro
+      - ./logs:/app/logs
+      - ./Docs:/app/Docs
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - alemeno_network
+    restart: unless-stopped
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: alemeno_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@alemeno.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - alemeno_network
+    profiles:
+      - tools
 
 volumes:
   postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  alemeno_network:
+    driver: bridge
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt

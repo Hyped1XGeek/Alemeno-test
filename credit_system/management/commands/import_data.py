@@ -7,8 +7,10 @@ This command imports data from the provided CSV files into the database.
 import csv
 import logging
 from decimal import Decimal
+
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+
 from credit_system.models import Customer, Loan
 
 logger = logging.getLogger(__name__)
@@ -16,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     """Management command to import CSV data."""
-    
+
     help = "Import customer and loan data from CSV files"
 
     def add_arguments(self, parser):
@@ -72,14 +74,14 @@ class Command(BaseCommand):
     def import_customers(self, file_path):
         """Import customer data from CSV file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as file:
+            with open(file_path, encoding="utf-8") as file:
                 reader = csv.DictReader(file)
                 customers_created = 0
 
                 with transaction.atomic():
                     for row in reader:
                         customer_id = int(row["Customer ID"])
-                        
+
                         # Skip if customer already exists
                         if Customer.objects.filter(customer_id=customer_id).exists():
                             continue
@@ -107,7 +109,7 @@ class Command(BaseCommand):
     def import_loans(self, file_path):
         """Import loan data from CSV file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as file:
+            with open(file_path, encoding="utf-8") as file:
                 reader = csv.DictReader(file)
                 loans_created = 0
 
@@ -115,7 +117,7 @@ class Command(BaseCommand):
                     for row in reader:
                         loan_id = int(row["Loan ID"])
                         customer_id = int(row["Customer ID"])
-                        
+
                         # Skip if loan already exists
                         if Loan.objects.filter(loan_id=loan_id).exists():
                             continue

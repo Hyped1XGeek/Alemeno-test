@@ -1,227 +1,260 @@
 # Credit Approval System
 
-A comprehensive Django-based Credit Approval System that provides loan approval functionality, customer management, and credit scoring algorithms.
+A comprehensive Django-based Credit Approval System built as an assignment for Alemeno. Features automated loan approval, customer management, and advanced credit scoring algorithms with full Docker support.
 
-## Features
+## Table of Contents
 
-- **Customer Management**: Complete CRUD operations for customer data
-- **Loan Management**: Track and manage loan applications and approvals
-- **Credit Scoring**: Advanced credit scoring algorithm based on multiple factors
-- **Credit Approval**: Automated loan approval/rejection with detailed reasoning
-- **REST API**: Full REST API for all operations
-- **Data Import**: Import customer and loan data from CSV files
-- **Admin Interface**: Django admin interface for data management
+- [🚀 Features](#-features)
+- [⚡ Quick Start](#-quick-start)
+- [🔌 API Endpoints](#-api-endpoints)
+- [📊 Credit Scoring](#-credit-scoring)
+- [🐳 Docker Setup](#-docker-setup)
+- [🧪 Testing](#-testing)
+- [📁 Project Structure](#-project-structure)
+- [⚙️ Configuration](#️-configuration)
+- [💻 Development](#-development)
+- [📈 Adding CSV Data](#-adding-csv-data)
 
-## Project Structure
+## 🚀 Features
 
-```
-Alemeno/
-├── project/                 # Django project settings
-│   ├── __init__.py
-│   ├── settings.py         # Django settings
-│   ├── urls.py            # Main URL configuration
-│   ├── wsgi.py            # WSGI configuration
-│   └── asgi.py            # ASGI configuration
-├── credit_system/          # Main Django app
-│   ├── __init__.py
-│   ├── apps.py
-│   ├── models.py          # Customer and Loan models
-│   ├── serializers.py     # DRF serializers
-│   ├── views.py           # API views
-│   ├── urls.py            # App URL configuration
-│   ├── admin.py           # Admin configuration
-│   ├── services.py        # Business logic services
-│   └── management/
-│       └── commands/
-│           └── import_data.py  # Data import command
-├── Docs/                   # Documentation and data files
-│   ├── customer_data.csv
-│   └── loan_data.csv
-├── bin/                    # Executable scripts
-├── logs/                   # Log files
-├── templates/              # Django templates
-├── staticfiles/            # Static files
-├── manage.py              # Django management script
-├── pyproject.toml         # Project configuration
-└── README.md              # This file
-```
+- **Automated Credit Scoring**: Advanced algorithm based on payment history, loan activity, and financial metrics
+- **Loan Approval System**: Tiered approval logic with interest rate adjustments
+- **Customer Management**: Complete CRUD operations with approved limit calculations
+- **REST API**: Full REST API with Django REST Framework
+- **Docker Support**: Complete containerization with PostgreSQL
+- **Data Import**: CSV data import with management commands
+- **Comprehensive Testing**: Unit tests, API tests, and database rollback strategies
 
-## Installation and Setup
+## ⚡ Quick Start
 
 ### Prerequisites
 
 - Python 3.13+
+- Docker Desktop (for containerized setup)
 - uv package manager
 
-### 1. Install Dependencies
+### Local Development
 
 ```bash
-# Install uv if not already installed
-pip install uv
+# Clone and setup
+git clone <repository-url>
+cd Alemeno
 
-# Install project dependencies
+# Install dependencies
 uv sync
-```
 
-### 2. Database Setup
-
-```bash
 # Run migrations
-python manage.py makemigrations
 python manage.py migrate
 
-# Create superuser (optional)
-python manage.py createsuperuser
-```
-
-### 3. Import Sample Data
-
-```bash
-# Import customer and loan data from CSV files
+# Import sample data
 python manage.py import_data
+
+# Start development server
+python main.py start
 ```
 
-### 4. Run the Development Server
+### Docker Setup
 
 ```bash
-python manage.py runserver
+# Start entire system with one command
+docker-compose up --build
+
+# Access the application
+# API: http://localhost:8000/api/
+# Database: localhost:5432
 ```
 
-The API will be available at `http://localhost:8000/api/`
+## 🔌 API Endpoints
 
-## API Endpoints
+### Core Endpoints
 
-### Customer Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/register/` | Register new customer |
+| `POST` | `/api/check-eligibility/` | Check loan eligibility |
+| `POST` | `/api/create-loan/` | Create new loan |
+| `GET` | `/api/view-loan/<id>/` | View loan details |
+| `GET` | `/api/view-loans/<customer_id>/` | View customer's loans |
+| `GET` | `/api/credit-score/<customer_id>/` | Get customer credit score |
+| `GET` | `/api/stats/` | System statistics |
 
-- `GET /api/customers/` - List all customers
-- `POST /api/customers/` - Create a new customer
-- `GET /api/customers/{id}/` - Get customer details
-- `PUT /api/customers/{id}/` - Update customer
-- `DELETE /api/customers/{id}/` - Delete customer
-- `GET /api/customers/search/?q={query}` - Search customers
-- `GET /api/customers/{id}/loans/` - Get customer's loans
-- `GET /api/customers/{id}/summary/` - Get customer loan summary
-
-### Loan Endpoints
-
-- `GET /api/loans/` - List all loans
-- `POST /api/loans/` - Create a new loan
-- `GET /api/loans/{id}/` - Get loan details
-- `PUT /api/loans/{id}/` - Update loan
-- `DELETE /api/loans/{id}/` - Delete loan
-- `GET /api/loans/active/` - Get active loans
-
-### Credit Approval Endpoints
-
-- `POST /api/credit-approval/` - Submit credit approval request
-
-### System Endpoints
-
-- `GET /api/stats/` - Get system statistics
-
-## Credit Approval API Usage
-
-### Submit Credit Approval Request
+### Example Usage
 
 ```bash
-curl -X POST http://localhost:8000/api/credit-approval/ \
+# Register customer
+curl -X POST http://localhost:8000/api/register/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "first_name": "John",
+    "last_name": "Doe", 
+    "age": 30,
+    "monthly_income": 50000,
+    "phone_number": "1234567890"
+  }'
+
+# Check loan eligibility
+curl -X POST http://localhost:8000/api/check-eligibility/ \
   -H "Content-Type: application/json" \
   -d '{
     "customer_id": 1,
     "loan_amount": 100000,
-    "tenure": 24,
-    "interest_rate": 12.5
+    "interest_rate": 12.0,
+    "tenure": 24
   }'
 ```
 
-### Response Format
+## 📊 Credit Scoring
 
-```json
-{
-  "approved": true,
-  "message": "Loan approved",
-  "loan_id": 12345,
-  "credit_score": 750,
-  "monthly_payment": 4500.00,
-  "total_amount": 108000.00,
-  "reasons": ["Loan approved based on all criteria"]
-}
+The system uses a comprehensive 0-100 credit scoring algorithm:
+
+### Scoring Factors
+
+- **Past Loans Paid on Time**: 30 points maximum
+- **Number of Past Loans**: 20 points maximum  
+- **Current Year Loan Activity**: 20 points maximum
+- **Total Approved Volume**: 20 points maximum
+- **Current Debt vs Approved Limit**: 10 points maximum
+
+### Approval Logic
+
+| Credit Score | Interest Rate Requirement | Action |
+|--------------|---------------------------|---------|
+| > 50 | Any rate | Approve |
+| 30-50 | ≥ 12% | Approve |
+| 10-30 | ≥ 16% | Approve |
+| < 10 | N/A | Reject |
+
+### Additional Checks
+
+- Monthly EMIs must not exceed 50% of monthly salary
+- Loan amount must not exceed approved limit
+- Age and tenure validation
+
+## 🐳 Docker Setup
+
+### Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Django App    │◄──►│   PostgreSQL    │
+│   (Port 8000)   │    │   (Port 5432)   │
+└─────────────────┘    └─────────────────┘
 ```
 
-## Credit Scoring Algorithm
-
-The system uses a comprehensive credit scoring algorithm that considers:
-
-1. **Age Factor**: Older customers get higher scores
-2. **Salary Factor**: Higher salaries result in better scores
-3. **Credit Utilization**: Lower utilization ratios improve scores
-4. **Payment History**: On-time payment history increases scores
-5. **Loan Amount vs. Salary**: Monthly payment should not exceed 40% of salary
-6. **Credit Limit**: Loan amount should not exceed approved limit
-
-### Credit Score Ranges
-
-- **300-579**: Poor credit
-- **580-669**: Fair credit
-- **670-739**: Good credit
-- **740-799**: Very good credit
-- **800-850**: Excellent credit
-
-## Data Models
-
-### Customer Model
-
-```python
-{
-  "customer_id": 1,
-  "first_name": "John",
-  "last_name": "Doe",
-  "age": 35,
-  "phone_number": "1234567890",
-  "monthly_salary": 50000.00,
-  "approved_limit": 500000.00,
-  "created_at": "2024-01-01T00:00:00Z",
-  "updated_at": "2024-01-01T00:00:00Z"
-}
-```
-
-### Loan Model
-
-```python
-{
-  "loan_id": 12345,
-  "customer": 1,
-  "loan_amount": 100000.00,
-  "tenure": 24,
-  "interest_rate": 12.50,
-  "monthly_payment": 4500.00,
-  "emis_paid_on_time": 12,
-  "date_of_approval": "2024-01-01",
-  "end_date": "2026-01-01",
-  "created_at": "2024-01-01T00:00:00Z",
-  "updated_at": "2024-01-01T00:00:00Z"
-}
-```
-
-## Development
-
-### Code Quality
-
-The project uses Ruff for linting and follows PEP 8 standards:
+### Commands
 
 ```bash
-# Run linting
-uv run ruff check .
+# Start all services
+docker-compose up --build
 
-# Fix auto-fixable issues
-uv run ruff check . --fix
+# View logs
+docker-compose logs -f
+
+# Database operations
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py import_data
+
+# Stop services
+docker-compose down
 ```
+
+### Configuration
+
+- **Database**: `alemeno_credit_system`
+- **Username**: `alemeno_user`
+- **Password**: Stored in `secrets/db_password.txt`
+- **Environment**: Development mode with `DEBUG=1`
+
+## 🧪 Testing
+
+### Test Strategies
+
+**Strategy 1: Database Rollback (Default)**
+- Fast execution with automatic rollback
+- No permanent database changes
+- Best for unit tests and development
+
+**Strategy 2: Separate Test Database**
+- Complete isolation from main data
+- More realistic testing environment
+- Best for integration tests
 
 ### Running Tests
 
 ```bash
-# Run tests (when implemented)
-python manage.py test
+# All tests (unit + API)
+python main.py test
+
+# Unit tests only
+python main.py unit
+
+# API tests only  
+python main.py api
+
+# Advanced options
+python bin/run_tests.py --all --separate-db
+```
+
+### Test Coverage
+
+- **Model Tests**: Customer and Loan model validation
+- **Service Tests**: Credit scoring and loan approval logic
+- **API Tests**: Complete endpoint functionality
+- **Integration Tests**: Database interactions and workflows
+
+## 📁 Project Structure
+
+```
+Alemeno/
+├── credit_system/          # Main Django app
+│   ├── services/          # Business logic modules
+│   ├── models.py          # Database models
+│   ├── views.py           # API endpoints
+│   └── migrations/        # Database schema changes
+├── project/               # Django project settings
+├── tests/                 # Test modules
+├── bin/                   # Executable scripts
+├── logs/                  # Application logs
+├── Docs/                  # Documentation and CSV data
+├── docker-compose.yml     # Docker orchestration
+├── Dockerfile            # Container definition
+└── main.py               # Application launcher
+```
+
+### Key Components
+
+- **Services Module**: Split into credit scoring, loan management, and customer management
+- **Logging System**: Datetime-stamped logs with comprehensive coverage
+- **Management Commands**: CSV data import and system setup
+- **Docker Configuration**: Complete containerization with PostgreSQL
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_HOST` | `db` | PostgreSQL hostname |
+| `DB_NAME` | `alemeno_credit_system` | Database name |
+| `DB_USER` | `alemeno_user` | Database username |
+| `DEBUG` | `1` | Django debug mode |
+
+### Database Settings
+
+- **Development**: SQLite fallback if PostgreSQL unavailable
+- **Production**: PostgreSQL with Docker secrets
+- **Testing**: Automatic rollback or separate test database
+
+## 💻 Development
+
+### Code Quality
+
+```bash
+# Linting with Ruff
+uv run ruff check .
+
+# Auto-fix issues
+uv run ruff check . --fix
 ```
 
 ### Database Management
@@ -233,129 +266,94 @@ python manage.py makemigrations
 # Apply migrations
 python manage.py migrate
 
-# Reset database (development only)
-rm db.sqlite3
-python manage.py migrate
+# Import data
 python manage.py import_data
 ```
 
-## Admin Interface
+### Main Application Launcher
 
-Access the Django admin interface at `http://localhost:8000/admin/` to:
+```bash
+# Start server
+python main.py start
 
-- Manage customers and loans
-- View system statistics
-- Monitor credit approvals
-- Import/export data
+# Setup database
+python main.py setup
 
-## Configuration
+# Run tests
+python main.py test
 
-### Environment Variables
-
-Create a `.env` file for production settings:
-
-```env
-SECRET_KEY=your-secret-key-here
-DEBUG=False
-ALLOWED_HOSTS=your-domain.com
-DATABASE_URL=postgresql://user:password@localhost/dbname
+# Get help
+python main.py help
 ```
 
-### Logging
+## 📈 Adding CSV Data
 
-Logs are written to `logs/django.log` and console output. Configure logging levels in `project/settings.py`.
+### Importing New Customer Data
 
-## Production Deployment
+To add new customer data from CSV files:
 
-### Using Docker
+```bash
+# Import customer data
+python manage.py import_data --customer-file path/to/new_customers.csv
 
-```dockerfile
-FROM python:3.13-slim
+# Import loan data
+python manage.py import_data --loan-file path/to/new_loans.csv
 
-WORKDIR /app
-COPY . .
-
-RUN pip install uv
-RUN uv sync
-
-EXPOSE 8000
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Import both files
+python manage.py import_data --customer-file customers.csv --loan-file loans.csv
 ```
 
-### Using Render/Heroku
+### CSV File Formats
 
-1. Set environment variables
-2. Configure database
-3. Run migrations
-4. Import data
-5. Deploy
-
-## API Documentation
-
-### Authentication
-
-Currently, the API allows anonymous access. For production, implement authentication:
-
-```python
-# In settings.py
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-}
+**Customer CSV Format:**
+```csv
+customer_id,first_name,last_name,age,monthly_income,phone_number,approved_limit
+1,John,Doe,30,50000,1234567890,1800000
+2,Jane,Smith,25,40000,9876543210,1440000
 ```
 
-### Rate Limiting
-
-Implement rate limiting for production:
-
-```python
-# Add to settings.py
-REST_FRAMEWORK = {
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
-        'user': '1000/hour'
-    }
-}
+**Loan CSV Format:**
+```csv
+loan_id,customer_id,loan_amount,interest_rate,tenure,monthly_installment,start_date,end_date,emis_paid_on_time
+1,1,100000,12.0,24,4707.35,2023-01-01,2024-12-31,12
+2,2,80000,15.0,36,2774.39,2023-02-01,2025-01-31,8
 ```
 
-## Troubleshooting
+### Data Validation
 
-### Common Issues
+The system automatically validates:
+- **Customer IDs**: Must be unique integers
+- **Phone Numbers**: Must be unique 10-digit numbers
+- **Loan IDs**: Must be unique integers
+- **Dates**: Must be in YYYY-MM-DD format
+- **Financial Data**: Must be positive numbers
 
-1. **Database errors**: Run migrations and check database permissions
-2. **Import errors**: Ensure CSV files are in the correct format
-3. **Permission errors**: Check file permissions for logs and static files
-4. **Port conflicts**: Change the port in runserver command
+### Docker Environment
 
-### Debug Mode
+For Docker deployments, place CSV files in the `Docs/` directory:
 
-Enable debug mode in development:
+```bash
+# Copy files to Docs directory
+cp new_customers.csv Docs/
+cp new_loans.csv Docs/
 
-```python
-# In settings.py
-DEBUG = True
+# Import via Docker
+docker-compose exec web python manage.py import_data --customer-file Docs/new_customers.csv --loan-file Docs/new_loans.csv
 ```
 
-## Contributing
+### Bulk Data Operations
 
-1. Follow PEP 8 style guidelines
-2. Use Ruff for linting
-3. Write comprehensive tests
-4. Update documentation
-5. Submit pull requests
+```bash
+# Clear existing data (use with caution)
+python manage.py flush
 
-## License
+# Import fresh dataset
+python manage.py import_data --customer-file Docs/customer_data.csv --loan-file Docs/loan_data.csv
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+# Verify import
+python manage.py shell -c "from credit_system.models import Customer, Loan; print(f'Customers: {Customer.objects.count()}, Loans: {Loan.objects.count()}')"
+```
 
-## Support
+---
 
-For support and questions, please create an issue in the project repository.
+**Built as an assignment for Alemeno** | **Django 5.0+** | **Python 3.13+** | **PostgreSQL** | **Docker**

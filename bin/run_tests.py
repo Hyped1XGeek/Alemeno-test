@@ -16,10 +16,10 @@ Usage:
     python bin/run_tests.py --help             # Show help
 """
 
-import os
-import sys
 import argparse
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 # Add the project root to Python path
@@ -29,6 +29,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
 
 import django
+
 django.setup()
 
 from tests.test_config import run_tests
@@ -38,18 +39,18 @@ def run_unit_tests(separate_db=False, verbosity=1):
     """Run unit tests for models and services."""
     print("🧪 Running Unit Tests...")
     print("=" * 60)
-    
+
     test_labels = [
         'tests.test_models',
         'tests.test_services'
     ]
-    
+
     failures = run_tests(
         test_labels=test_labels,
         verbosity=verbosity,
         separate_db=separate_db
     )
-    
+
     if failures:
         print(f"❌ {failures} unit test(s) failed")
         return False
@@ -62,18 +63,18 @@ def run_api_tests():
     """Run API integration tests."""
     print("\n🌐 Running API Tests...")
     print("=" * 60)
-    
+
     try:
         result = subprocess.run([
             "uv", "run", "python", "tests/test_api.py"
         ], check=True, capture_output=True, text=True)
-        
+
         print(result.stdout)
         print("✅ All API tests passed!")
         return True
-        
+
     except subprocess.CalledProcessError as e:
-        print(f"❌ API tests failed:")
+        print("❌ API tests failed:")
         print(e.stdout)
         print(e.stderr)
         return False
@@ -83,20 +84,20 @@ def run_all_tests(separate_db=False, verbosity=1):
     """Run all tests (unit + API)."""
     print("🚀 Running All Tests...")
     print("=" * 60)
-    
+
     # Run unit tests
     unit_success = run_unit_tests(separate_db, verbosity)
-    
+
     # Run API tests
     api_success = run_api_tests()
-    
+
     # Summary
     print("\n" + "=" * 60)
     print("📊 TEST SUMMARY")
     print("=" * 60)
     print(f"Unit Tests: {'✅ PASSED' if unit_success else '❌ FAILED'}")
     print(f"API Tests:  {'✅ PASSED' if api_success else '❌ FAILED'}")
-    
+
     if unit_success and api_success:
         print("\n🎉 ALL TESTS PASSED!")
         return True
@@ -136,7 +137,7 @@ def main():
         description="Credit Approval System Test Runner",
         add_help=False
     )
-    
+
     parser.add_argument(
         "--unit",
         action="store_true",
@@ -174,17 +175,17 @@ def main():
         action="store_true",
         help="Show help message"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Show help if requested
     if args.help or not any([args.unit, args.api, args.all]):
         show_help()
         return 0
-    
+
     # Determine test database strategy
     separate_db = args.separate_db
-    
+
     if separate_db:
         print("🗄️  Using SEPARATE TEST DATABASE")
         print("   - Complete isolation from main data")
@@ -195,19 +196,19 @@ def main():
         print("   - Fast execution")
         print("   - All changes reverted after tests")
         print("   - Uses same database structure")
-    
+
     print("")
-    
+
     # Run requested tests
     success = True
-    
+
     if args.unit:
         success = run_unit_tests(separate_db, args.verbosity)
     elif args.api:
         success = run_api_tests()
     elif args.all:
         success = run_all_tests(separate_db, args.verbosity)
-    
+
     return 0 if success else 1
 
 

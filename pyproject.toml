@@ -46,3 +46,8 @@ ignore = [
 
 [tool.ruff.isort]
 known-first-party = ["project"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.0",
+]
