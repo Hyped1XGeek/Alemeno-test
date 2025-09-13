@@ -14,7 +14,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from .models import Customer, Loan
-from .services import CreditApprovalService
+from .services import (
+    CreditScoringService,
+    LoanManagementService,
+    CustomerManagementService
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,13 +58,17 @@ def register(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Calculate approved limit based on monthly income
+        approved_limit = Customer.calculate_approved_limit(monthly_income)
+        
         # Register customer
-        result = CreditApprovalService.register_customer(
+        result = CustomerManagementService.register_customer(
             first_name=request.data["first_name"],
             last_name=request.data["last_name"],
             age=age,
             monthly_income=monthly_income,
             phone_number=request.data["phone_number"],
+            approved_limit=approved_limit
         )
         
         return Response(result, status=status.HTTP_201_CREATED)
@@ -103,13 +111,33 @@ def check_eligibility(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check eligibility
-        result = CreditApprovalService.check_eligibility(
-            customer_id=customer_id,
-            loan_amount=loan_amount,
-            interest_rate=interest_rate,
-            tenure=tenure,
+        # Get customer and check eligibility
+        try:
+            customer = Customer.objects.get(customer_id=customer_id)
+        except Customer.DoesNotExist:
+            return Response(
+                {"error": "Customer not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check loan approval
+        approved, message, corrected_interest_rate = CreditScoringService.check_loan_approval(
+            customer, loan_amount, interest_rate, tenure
         )
+        
+        # Calculate monthly installment
+        monthly_installment = CreditScoringService.calculate_monthly_emi(
+            loan_amount, corrected_interest_rate, tenure
+        )
+        
+        result = {
+            'customer_id': customer_id,
+            'approval': approved,
+            'interest_rate': float(interest_rate),
+            'corrected_interest_rate': float(corrected_interest_rate),
+            'tenure': tenure,
+            'monthly_installment': float(monthly_installment)
+        }
         
         if "error" in result:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
@@ -155,7 +183,7 @@ def create_loan(request):
             )
         
         # Create loan
-        result = CreditApprovalService.create_loan(
+        result = LoanManagementService.create_loan(
             customer_id=customer_id,
             loan_amount=loan_amount,
             interest_rate=interest_rate,
@@ -195,7 +223,7 @@ def view_loan(request, loan_id):
         )
     
     try:
-        result = CreditApprovalService.view_loan(loan_id)
+        result = LoanManagementService.get_loan_details(loan_id)
         
         if "error" in result:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
@@ -227,7 +255,7 @@ def view_customer_loans(request, customer_id):
         )
     
     try:
-        result = CreditApprovalService.view_customer_loans(customer_id)
+        result = LoanManagementService.get_customer_loans(customer_id)
         
         if "error" in result:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
@@ -252,28 +280,58 @@ def system_stats(request):
     GET /stats/
     """
     try:
-        from datetime import date
-        
-        total_customers = Customer.objects.count()
-        total_loans = Loan.objects.count()
-        active_loans = Loan.objects.filter(end_date__gt=date.today()).count()
-        
-        total_loan_amount = sum(loan.loan_amount for loan in Loan.objects.all())
-        total_outstanding_amount = sum(
-            loan.remaining_amount
-            for loan in Loan.objects.filter(end_date__gt=date.today())
-        )
-        
-        return Response({
-            "total_customers": total_customers,
-            "total_loans": total_loans,
-            "active_loans": active_loans,
-            "total_loan_amount": float(total_loan_amount),
-            "total_outstanding_amount": float(total_outstanding_amount),
-        })
+        result = LoanManagementService.get_system_stats()
+        return Response(result)
         
     except Exception as e:
         logger.error(f"Error in system_stats: {str(e)}")
+        return Response(
+            {"error": "Internal server error"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_credit_score(request, customer_id):
+    """
+    Get the credit score for a specific customer.
+    
+    Args:
+        customer_id: ID of the customer
+        
+    Returns:
+        JSON response with customer details and credit score
+    """
+    try:
+        # Get customer
+        try:
+            customer = Customer.objects.get(customer_id=customer_id)
+        except Customer.DoesNotExist:
+            return Response(
+                {"error": "Customer not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        # Calculate credit score
+        credit_score = CreditScoringService.calculate_credit_score(customer)
+        
+        # Prepare response
+        result = {
+            "customer_id": customer.customer_id,
+            "name": customer.full_name,
+            "age": customer.age,
+            "monthly_income": float(customer.monthly_income),
+            "approved_limit": float(customer.approved_limit),
+            "current_debt": float(customer.current_debt),
+            "credit_score": credit_score,
+            "credit_utilization": float(customer.credit_utilization_ratio)
+        }
+        
+        return Response(result)
+        
+    except Exception as e:
+        logger.error(f"Error in get_credit_score: {str(e)}")
         return Response(
             {"error": "Internal server error"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,

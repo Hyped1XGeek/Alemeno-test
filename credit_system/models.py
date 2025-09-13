@@ -1,8 +1,7 @@
 """
 Django models for the Credit Approval System.
 
-This module contains the Customer and Loan models that represent
-the core entities in the credit approval system.
+This module contains the Customer and Loan models that represent the core entities in the credit approval system.
 """
 
 from decimal import Decimal
@@ -79,7 +78,9 @@ class Customer(models.Model):
         base_limit = monthly_income * 36
         # Round to nearest lakh (100000)
         lakh = Decimal('100000')
-        return (base_limit / lakh).quantize(Decimal('1')) * lakh
+        # Use round() to properly round to nearest lakh
+        lakhs = round(base_limit / lakh)
+        return lakhs * lakh
 
 
 class Loan(models.Model):

@@ -1,8 +1,7 @@
 """
 Django admin configuration for the Credit Approval System.
 
-This module configures the Django admin interface for managing
-customers and loans.
+This module configures the Django admin interface for managing customers and loans.
 """
 
 from django.contrib import admin

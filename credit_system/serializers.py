@@ -1,7 +1,5 @@
 """
 Django REST Framework serializers for the Credit Approval System.
-
-This module contains serializers that match the assignment requirements exactly.
 """
 
 from decimal import Decimal

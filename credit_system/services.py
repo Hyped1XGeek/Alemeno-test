@@ -1,8 +1,7 @@
 """
 Business logic services for the Credit Approval System.
 
-This module contains the core business logic for credit approval,
-credit scoring, and loan calculations according to assignment requirements.
+This module contains the core business logic for credit approval, credit scoring, and loan calculations according to assignment requirements.
 """
 
 import logging

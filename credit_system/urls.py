@@ -20,4 +20,5 @@ urlpatterns = [
     
     # Additional system management endpoints
     path("stats/", views.system_stats, name="system_stats"),
+    path("credit-score/<int:customer_id>/", views.get_credit_score, name="get_credit_score"),
 ]
